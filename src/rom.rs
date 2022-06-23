@@ -16,4 +16,16 @@ impl Rom {
 
         Rom { contents }
     }
+
+    pub fn get_magic_number(&self) -> String {
+        self.contents[..0x4].iter().map(|x| *x as char).collect()
+    }
+
+    pub fn get_mapper_number(&self) -> u8 {
+        ((self.contents[6] >> 4) & 0xF) | (self.contents[7] & 0xF0)
+    }
+
+    pub fn get_vbanks(&self) -> u8 {
+        self.contents[5]
+    }
 }
