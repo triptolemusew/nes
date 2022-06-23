@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2018"
 resolver = "2"
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [[bin]]
 name = "wgpu"
 path = "src/main.rs"
@@ -13,4 +16,4 @@ cfg-if = "1"
 winit = "0.26"
 wgpu = "0.12"
 env_logger = "0.9"
-
+pollster = "0.2"
