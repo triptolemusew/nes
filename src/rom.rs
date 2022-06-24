@@ -5,6 +5,7 @@ pub struct Rom {
     pub contents: Vec<u8>,
 }
 
+#[allow(dead_code)]
 impl Rom {
     pub fn new(path: &String) -> Self {
         let mut f = File::open(&path).expect("no file found");

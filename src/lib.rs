@@ -1,30 +1,35 @@
+#[macro_use]
+extern crate wgpu;
+
 use winit::{
+    dpi::PhysicalSize,
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::{WindowBuilder},
+    window::WindowBuilder,
 };
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-mod bus;
-mod rom;
-mod cpu;
 mod graphics;
+mod rom;
 
 use graphics::state;
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub async fn run() {
+    let scale_factor = 2;
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(256 * scale_factor, 240 * scale_factor))
+        .with_title("nes")
         .build(&event_loop)
         .unwrap();
 
     #[cfg(target_arch = "wasm32")]
     {
         use winit::dpi::PhysicalSize;
-        window.set_inner_size(PhysicalSize::new(450, 400));
+        window.set_inner_size(PhysicalSize::new(256 * scale_factor, 240 * scale_factor));
 
         use winit::platform::web::WindowExtWebSys;
         web_sys::window()
@@ -39,6 +44,8 @@ pub async fn run() {
     }
 
     let mut state = state::State::new(&window).await;
+
+    // TODO: Find a way to update the buffer in interval.
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {

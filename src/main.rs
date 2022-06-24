@@ -11,7 +11,8 @@ fn main() {
         _ => panic!("Please provide rom."),
     };
 
-    let rom = Rom::new(&String::from(file_name));
+    // TODO: Pass rom contents to the run function
+    let _rom = Rom::new(&String::from(file_name));
 
     pollster::block_on(run());
 }
