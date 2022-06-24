@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use wgpu::util::DeviceExt;
 use winit::{event::*, window::Window};
 
@@ -15,6 +17,7 @@ pub struct State {
     pub index_buffer: wgpu::Buffer,
     pub num_indices: u32,
     pub diffuse_bind_group: wgpu::BindGroup,
+    pub diffuse_texture: texture::Texture,
 }
 
 #[repr(C)]
@@ -103,20 +106,21 @@ impl State {
 
         surface.configure(&device, &config);
 
-        let shader = device.create_shader_module(&include_wgsl!("shader.wgsl"));
-        // length of the image is 61440, dimension - 256 x 240;
-        let mut diffuse_bytes = vec![0x00; 256 * 240 * 4];
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(INDICES),
+            usage: wgpu::BufferUsages::INDEX,
+        });
 
-        for i in (0..diffuse_bytes.len()).step_by(2048) {
-            for x in (i..(i + 1024)).step_by(4) {
-                diffuse_bytes[x as usize] = 0xff;
-                diffuse_bytes[x as usize + 1] = 0xff;
-                diffuse_bytes[x as usize + 2] = 0xff;
-            }
-        }
+        let shader = device.create_shader_module(&include_wgsl!("shader.wgsl"));
 
         let diffuse_texture =
-            texture::Texture::from_bytes(&device, &queue, &diffuse_bytes).unwrap();
+            texture::Texture::from_bytes(&device, 256, 240).unwrap();
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -195,17 +199,6 @@ impl State {
             multiview: None,
         });
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(INDICES),
-            usage: wgpu::BufferUsages::INDEX,
-        });
-
         let num_vertices = VERTICES.len() as u32;
         let num_indices = INDICES.len() as u32;
 
@@ -221,6 +214,7 @@ impl State {
             index_buffer,
             num_indices,
             diffuse_bind_group,
+            diffuse_texture,
         }
     }
 
@@ -237,9 +231,26 @@ impl State {
         false
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, bytes: &[u8]) {
         // NOTE: Using this to write buffer to texture.
+        self.queue.write_texture(
+            wgpu::ImageCopyTexture {
+                aspect: wgpu::TextureAspect::All,
+                texture: &self.diffuse_texture.texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            bytes,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(NonZeroU32::new(256 * 4).unwrap()),
+                rows_per_image: None,
+            },
+            self.diffuse_texture.size,
+        );
     }
+
+    pub fn update_texture(&mut self) {}
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;

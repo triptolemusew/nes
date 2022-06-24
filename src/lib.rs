@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate wgpu;
 
+use std::time::Duration;
+
 use winit::{
     dpi::PhysicalSize,
     event::*,
@@ -22,7 +24,7 @@ pub async fn run() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
         .with_inner_size(PhysicalSize::new(256 * scale_factor, 240 * scale_factor))
-        .with_title("nes")
+        .with_title("wasm-nes")
         .build(&event_loop)
         .unwrap();
 
@@ -43,9 +45,10 @@ pub async fn run() {
             .expect("Couldn't append canvas to document body.");
     }
 
-    let mut state = state::State::new(&window).await;
+    let mut diffuse_bytes = vec![0x00; 256 * 240 * 4];
 
-    // TODO: Find a way to update the buffer in interval.
+    let mut state = state::State::new(&window).await;
+    let mut count = 0;
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -78,7 +81,21 @@ pub async fn run() {
             window.request_redraw();
         }
         Event::RedrawRequested(window_id) if window_id == window.id() => {
-            state.update();
+            for i in (0..diffuse_bytes.len()).step_by(2048) {
+                let color = if count % 2 == 0 { 0xff } else { 0x66 };
+
+                for x in (i..(i + 1024)).step_by(4) {
+                    diffuse_bytes[x as usize] = color;
+                    diffuse_bytes[x as usize + 1] = color;
+                    diffuse_bytes[x as usize + 2] = color;
+                }
+            }
+
+            count += 1;
+
+            state.update(&diffuse_bytes);
+            std::thread::sleep(Duration::from_millis(500));
+
             match state.render() {
                 Ok(_) => {}
                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {

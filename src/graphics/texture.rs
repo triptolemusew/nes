@@ -1,22 +1,17 @@
-use std::num::NonZeroU32;
-
 use anyhow::*;
 
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
+    pub size: wgpu::Extent3d,
 }
 
 impl Texture {
-    pub fn from_bytes(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        bytes: &[u8],
-    ) -> Result<Self> {
+    pub fn from_bytes(device: &wgpu::Device, width: u32, height: u32) -> Result<Self> {
         let size = wgpu::Extent3d {
-            width: 256,
-            height: 240,
+            width,
+            height,
             depth_or_array_layers: 1,
         };
 
@@ -38,26 +33,11 @@ impl Texture {
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
 
-        queue.write_texture(
-            wgpu::ImageCopyTexture {
-                aspect: wgpu::TextureAspect::All,
-                texture: &texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-            },
-            bytes,
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(NonZeroU32::new(256 * 4).unwrap()),
-                rows_per_image: None,
-            },
-            size,
-        );
-
         Ok(Self {
             texture,
             view,
             sampler,
+            size,
         })
     }
 }
