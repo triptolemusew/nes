@@ -15,7 +15,6 @@ pub struct State {
     pub index_buffer: wgpu::Buffer,
     pub num_indices: u32,
     pub diffuse_bind_group: wgpu::BindGroup,
-    pub texture_index_buffer: wgpu::Buffer,
 }
 
 #[repr(C)]
@@ -207,16 +206,6 @@ impl State {
             usage: wgpu::BufferUsages::INDEX,
         });
 
-        // NOTE: Below code are experimental, might want to delete them if it doesn't work out.
-        let mut texture_index_buffer_contents = vec![0u32; 128];
-        texture_index_buffer_contents[0] = 0;
-        texture_index_buffer_contents[64] = 1;
-        let texture_index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(&texture_index_buffer_contents),
-            usage: wgpu::BufferUsages::UNIFORM,
-        });
-
         let num_vertices = VERTICES.len() as u32;
         let num_indices = INDICES.len() as u32;
 
@@ -232,7 +221,6 @@ impl State {
             index_buffer,
             num_indices,
             diffuse_bind_group,
-            texture_index_buffer,
         }
     }
 
