@@ -37,8 +37,8 @@ const VERTICES: &[Vertex] = &[
 
 #[rustfmt::skip]
 const INDICES: &[u16] = &[
-    0, 1, 3,
-    1, 2, 3
+    0, 1, 3, // 1st Triangle
+    1, 2, 3, // 2nd Triangle
 ];
 
 impl Vertex {
@@ -111,6 +111,7 @@ impl State {
             contents: bytemuck::cast_slice(VERTICES),
             usage: wgpu::BufferUsages::VERTEX,
         });
+
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(INDICES),
@@ -119,8 +120,7 @@ impl State {
 
         let shader = device.create_shader_module(&include_wgsl!("shader.wgsl"));
 
-        let diffuse_texture =
-            texture::Texture::from_bytes(&device, 256, 240).unwrap();
+        let diffuse_texture = texture::Texture::from_bytes(&device, 256, 240).unwrap();
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -250,8 +250,6 @@ impl State {
         );
     }
 
-    pub fn update_texture(&mut self) {}
-
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
@@ -289,7 +287,7 @@ impl State {
 
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            // render_pass.draw(0..self.num_vertices, 0..1);
+
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
 
