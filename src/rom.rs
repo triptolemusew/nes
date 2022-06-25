@@ -1,3 +1,4 @@
+use super::components::mapper;
 use std::{fs::*, io::Read};
 
 #[derive(Debug)]
@@ -5,7 +6,6 @@ pub struct Rom {
     pub contents: Vec<u8>,
 }
 
-#[allow(dead_code)]
 impl Rom {
     pub fn new(path: &String) -> Self {
         let mut f = File::open(&path).expect("no file found");
@@ -22,8 +22,14 @@ impl Rom {
         self.contents[..0x4].iter().map(|x| *x as char).collect()
     }
 
-    pub fn get_mapper_number(&self) -> u8 {
-        ((self.contents[6] >> 4) & 0xF) | (self.contents[7] & 0xF0)
+    pub fn get_mapper(&self) -> Option<mapper::MapperType> {
+        let value = ((self.contents[6] >> 4) & 0xF) | (self.contents[7] & 0xF0);
+        match value {
+            0 => Some(mapper::MapperType::NROM),
+            1 => Some(mapper::MapperType::SxROM),
+            2 => Some(mapper::MapperType::UxROM),
+            _ => None,
+        }
     }
 
     pub fn get_vbanks(&self) -> u8 {
