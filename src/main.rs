@@ -1,7 +1,10 @@
 use nes::run;
-use rom::Rom;
+use nes::rom::Rom;
+
 use std::env;
 
+mod components;
+mod bus;
 mod rom;
 
 fn main() {
@@ -12,7 +15,7 @@ fn main() {
     };
 
     // TODO: Pass rom contents to the run function
-    let _rom = Rom::new(&String::from(file_name));
+    let rom = Rom::new(&String::from(file_name));
 
-    pollster::block_on(run());
+    pollster::block_on(run(&rom));
 }

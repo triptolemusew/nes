@@ -1,8 +1,6 @@
 #[macro_use]
 extern crate wgpu;
 
-use std::time::Duration;
-
 use winit::{
     dpi::PhysicalSize,
     event::*,
@@ -13,18 +11,23 @@ use winit::{
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+mod bus;
+mod components;
+mod emulator;
 mod graphics;
-mod rom;
+pub mod rom;
 
+use emulator::Emulator;
 use graphics::state;
+use rom::Rom;
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
-pub async fn run() {
+pub async fn run(rom: &Rom) {
     let scale_factor = 2;
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
         .with_inner_size(PhysicalSize::new(256 * scale_factor, 240 * scale_factor))
-        .with_title("wasm-nes")
+        .with_title("nes")
         .build(&event_loop)
         .unwrap();
 
@@ -46,9 +49,11 @@ pub async fn run() {
     }
 
     let mut diffuse_bytes = vec![0x00; 256 * 240 * 4];
-
     let mut state = state::State::new(&window).await;
-    let mut count = 0;
+    let mut emulator = Emulator::new();
+
+    emulator.load_rom(rom);
+    emulator.run();
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
@@ -82,8 +87,7 @@ pub async fn run() {
         }
         Event::RedrawRequested(window_id) if window_id == window.id() => {
             for i in (0..diffuse_bytes.len()).step_by(2048) {
-                let color = if count % 2 == 0 { 0xff } else { 0x66 };
-
+                let color = 0x66;
                 for x in (i..(i + 1024)).step_by(4) {
                     diffuse_bytes[x as usize] = color;
                     diffuse_bytes[x as usize + 1] = color;
@@ -91,10 +95,7 @@ pub async fn run() {
                 }
             }
 
-            count += 1;
-
             state.update(&diffuse_bytes);
-            std::thread::sleep(Duration::from_millis(500));
 
             match state.render() {
                 Ok(_) => {}
