@@ -1,11 +1,10 @@
 use nes::run;
-use nes::rom::Rom;
+use nes::components::rom::Rom;
 
 use std::env;
 
 mod components;
 mod bus;
-mod rom;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -14,7 +13,6 @@ fn main() {
         _ => panic!("Please provide rom."),
     };
 
-    // TODO: Pass rom contents to the run function
     let rom = Rom::new(&String::from(file_name));
 
     pollster::block_on(run(&rom));

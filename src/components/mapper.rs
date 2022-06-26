@@ -1,4 +1,4 @@
-use crate::rom::Rom;
+use super::rom::Rom;
 
 #[allow(clippy::upper_case_acronyms)]
 pub enum MapperType {
@@ -13,10 +13,6 @@ pub trait Mapper {
 
     fn read_chr(&self, addr: u16) -> u8;
     fn write_chr(&mut self, addr: u16, value: u8);
-
-    fn get_page_ptr(&self, addr: u16) -> &u8;
-    fn get_nametable_mirroring(&self);
-    fn has_extended_ram(&self);
 }
 
 pub struct MapperNRom<'a> {
@@ -28,20 +24,11 @@ impl<'a> Mapper for MapperNRom<'a> {
     fn read_prg(&self, addr: u16) -> u8 {
         self.rom.contents[addr as usize - 0x8000]
     }
-
-    fn get_page_ptr(&self, addr: u16) -> &u8 {
-        &self.rom.contents[addr as usize - 0x8000]
-    }
-
     fn read_chr(&self, addr: u16) -> u8 {
         self.rom.contents[addr as usize]
     }
-
     fn write_chr(&mut self, addr: u16, value: u8) {}
     fn write_prg(&mut self, addr: u16, value: u8) {}
-
-    fn get_nametable_mirroring(&self) {}
-    fn has_extended_ram(&self) {}
 }
 
 impl<'a> MapperNRom<'a> {

@@ -12,15 +12,19 @@ pub struct Ppu {
     oam_data: u8,
     oam_dma: u8,
     vram: Vec<u8>,
+    sprite: Vec<u8>,
 }
 
 impl Ppu {
     pub fn new() -> Self {
         Ppu {
-            vram: vec![0x00; 2048],
+            sprite: vec![0x00; 64 * 4],
+            vram: vec![0x00; 256 * 240],
             ..Default::default()
         }
     }
+
+    pub fn reset(&mut self) {}
 
     pub fn cycle(&mut self, bus: &mut Bus) {}
 }

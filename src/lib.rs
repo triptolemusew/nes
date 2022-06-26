@@ -12,14 +12,13 @@ use winit::{
 use wasm_bindgen::prelude::*;
 
 mod bus;
-mod components;
+pub mod components;
 mod emulator;
 mod graphics;
-pub mod rom;
 
 use emulator::Emulator;
 use graphics::state;
-use rom::Rom;
+use components::rom::Rom;
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub async fn run(rom: &Rom) {
@@ -31,9 +30,7 @@ pub async fn run(rom: &Rom) {
         .build(&event_loop)
         .unwrap();
 
-    #[cfg(target_arch = "wasm32")]
-    {
-        use winit::dpi::PhysicalSize;
+    #[cfg(target_arch = "wasm32")] { use winit::dpi::PhysicalSize;
         window.set_inner_size(PhysicalSize::new(256 * scale_factor, 240 * scale_factor));
 
         use winit::platform::web::WindowExtWebSys;
@@ -47,12 +44,13 @@ pub async fn run(rom: &Rom) {
             })
             .expect("Couldn't append canvas to document body.");
     }
-
     let mut diffuse_bytes = vec![0x00; 256 * 240 * 4];
     let mut state = state::State::new(&window).await;
     let mut emulator = Emulator::new();
 
+    emulator.reset();
     emulator.load_rom(rom);
+
     emulator.run();
 
     event_loop.run(move |event, _, control_flow| match event {

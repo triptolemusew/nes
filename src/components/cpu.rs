@@ -32,19 +32,18 @@ impl Cpu {
         self.y = 0;
         self.sp = 0xFD;
         self.pc = 0;
-        // self.pc = InterruptVector::ResetVector as u16;
     }
 
     pub fn get_word(&mut self, bus: &Bus) -> u16 {
-        let hi = bus.read_memory(self.pc);
-        let lo = bus.read_memory(self.pc + 1);
+        let hi = bus.read(self.pc);
+        let lo = bus.read(self.pc + 1);
         u16::from_be_bytes([hi, lo])
     }
 
     pub fn cycle(&mut self, bus: &mut Bus) {
         self.cycles += 1;
 
-        let opcode = bus.read_memory(self.pc);
+        let opcode = bus.read(self.pc);
 
         println!("pc: {:#X} opcode: {:#X}", self.pc, opcode);
     }

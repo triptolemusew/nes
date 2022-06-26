@@ -1,6 +1,5 @@
 use super::bus::Bus;
-use super::components::{cpu::Cpu, mapper, ppu::Ppu};
-use super::rom::Rom;
+use super::components::{cpu::Cpu, mapper, ppu::Ppu, rom::Rom};
 
 pub struct Emulator<'a> {
     cpu: Cpu,
@@ -20,14 +19,20 @@ impl<'a> Emulator<'a> {
     }
 
     pub fn load_rom(&mut self, rom: &'a Rom) {
+        // NOTE: We can load the rom from here instead.
         self.mapper = match rom.get_mapper() {
             Some(mapper) => mapper::create_mapper(mapper, rom),
             None => panic!("Couldn't find a mapper"),
         };
 
-        for (i, item) in rom.contents.iter().enumerate() {
-            self.bus.write_memory(i as u16, *item);
-        }
+        // for (i, item) in rom.contents.iter().enumerate() {
+        //     self.bus.write_memory(i as u16, *item);
+        // }
+    }
+
+    pub fn reset(&mut self) {
+        self.cpu.reset();
+        self.ppu.reset();
     }
 
     pub fn run(&mut self) {

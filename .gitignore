@@ -1,3 +1,5 @@
 /target
 *.nes
 *.png
+**/debugger/**
+*.dbg
