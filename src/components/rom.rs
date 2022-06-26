@@ -40,8 +40,6 @@ impl Rom {
         let value = ((self.contents[6] >> 4) & 0xF) | (self.contents[7] & 0xF0);
         match value {
             0 => Some(mapper::MapperType::NROM),
-            1 => Some(mapper::MapperType::SxROM),
-            2 => Some(mapper::MapperType::UxROM),
             _ => None,
         }
     }
