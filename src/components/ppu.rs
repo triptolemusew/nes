@@ -1,4 +1,7 @@
 use crate::bus::Bus;
+use crate::components::mapper;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Default)]
 pub struct Ppu {
@@ -13,6 +16,7 @@ pub struct Ppu {
     oam_dma: u8,
     vram: Vec<u8>,
     sprite: Vec<u8>,
+    mapper: Option<Rc<RefCell<Box<dyn mapper::Mapper>>>>,
 }
 
 impl Ppu {
@@ -22,6 +26,10 @@ impl Ppu {
             vram: vec![0x00; 256 * 240],
             ..Default::default()
         }
+    }
+
+    pub fn attach_mapper(&mut self, mapper: Rc<RefCell<Box<dyn mapper::Mapper>>>) {
+        self.mapper = Some(mapper);
     }
 
     pub fn reset(&mut self) {}

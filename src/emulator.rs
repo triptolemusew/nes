@@ -1,37 +1,40 @@
 use super::bus::Bus;
 use super::components::{cpu::Cpu, mapper, ppu::Ppu, rom::Rom};
 
-pub struct Emulator<'a> {
+use std::cell::RefCell;
+use std::rc::Rc;
+
+pub struct Emulator {
     cpu: Cpu,
     ppu: Ppu,
     bus: Bus,
-    mapper: Option<Box<dyn mapper::Mapper + 'a>>,
 }
 
-impl<'a> Emulator<'a> {
+impl Emulator {
     pub fn new() -> Self {
         Emulator {
             cpu: Cpu::new(),
             ppu: Ppu::new(),
             bus: Bus::new(),
-            mapper: None,
         }
     }
 
-    pub fn load_rom(&mut self, rom: &'a Rom) {
-        // NOTE: We can load the rom from here instead.
-        self.mapper = match rom.get_mapper() {
-            Some(mapper) => mapper::create_mapper(mapper, rom),
+    pub fn load_rom(&mut self, rom: &Rom) {
+        let mapper = match rom.get_mapper() {
+            Some(mapper) => Rc::new(RefCell::new(
+                mapper::create_mapper(mapper, rom.prg_rom.clone(), rom.chr_rom.clone()).unwrap(),
+            )),
             None => panic!("Couldn't find a mapper"),
         };
 
-        // for (i, item) in rom.contents.iter().enumerate() {
-        //     self.bus.write_memory(i as u16, *item);
-        // }
+        self.bus.attach_mapper(mapper.clone());
+        self.ppu.attach_mapper(mapper.clone());
     }
 
     pub fn reset(&mut self) {
-        self.cpu.reset();
+        let bus = &mut self.bus;
+
+        self.cpu.reset(bus);
         self.ppu.reset();
     }
 

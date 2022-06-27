@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate wgpu;
+extern crate lazy_static;
 
 use winit::{
     dpi::PhysicalSize,
@@ -11,14 +12,15 @@ use winit::{
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-mod bus;
+pub mod bus;
 pub mod components;
-mod emulator;
-mod graphics;
+pub mod emulator;
+pub mod graphics;
 
+
+use components::rom::Rom;
 use emulator::Emulator;
 use graphics::state;
-use components::rom::Rom;
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub async fn run(rom: &Rom) {
@@ -30,7 +32,9 @@ pub async fn run(rom: &Rom) {
         .build(&event_loop)
         .unwrap();
 
-    #[cfg(target_arch = "wasm32")] { use winit::dpi::PhysicalSize;
+    #[cfg(target_arch = "wasm32")]
+    {
+        use winit::dpi::PhysicalSize;
         window.set_inner_size(PhysicalSize::new(256 * scale_factor, 240 * scale_factor));
 
         use winit::platform::web::WindowExtWebSys;
@@ -48,8 +52,8 @@ pub async fn run(rom: &Rom) {
     let mut state = state::State::new(&window).await;
     let mut emulator = Emulator::new();
 
-    emulator.reset();
     emulator.load_rom(rom);
+    emulator.reset();
 
     emulator.run();
 
