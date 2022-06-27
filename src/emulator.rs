@@ -6,7 +6,6 @@ use std::rc::Rc;
 
 pub struct Emulator {
     cpu: Cpu,
-    ppu: Ppu,
     bus: Bus,
 }
 
@@ -14,7 +13,6 @@ impl Emulator {
     pub fn new() -> Self {
         Emulator {
             cpu: Cpu::new(),
-            ppu: Ppu::new(),
             bus: Bus::new(),
         }
     }
@@ -28,22 +26,21 @@ impl Emulator {
         };
 
         self.bus.attach_mapper(mapper.clone());
-        self.ppu.attach_mapper(mapper.clone());
+        self.bus.ppu.attach_mapper(mapper.clone());
     }
 
     pub fn reset(&mut self) {
         let bus = &mut self.bus;
 
         self.cpu.reset(bus);
-        self.ppu.reset();
+        self.bus.ppu.reset();
     }
 
     pub fn run(&mut self) {
         let bus = &mut self.bus;
 
-        'main: loop {
+        loop {
             self.cpu.cycle(bus);
-            // self.ppu.cycle(bus);
         }
     }
 }

@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate lazy_static;
+extern crate bitflags;
 
-use nes::run;
 use nes::components::rom::Rom;
+use nes::run;
 
 use std::env;
 
-pub mod components;
 pub mod bus;
-
+pub mod components;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

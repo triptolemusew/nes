@@ -1,5 +1,19 @@
 use crate::bus::Bus;
-use crate::components::opcode::{OPCODE_MAP, Mode, Opcode};
+use crate::components::opcode::{Mode, Opcode, OPCODE_MAP};
+
+bitflags::bitflags! {
+    #[derive(Default)]
+    pub struct CpuFlags: u8 {
+        const CARRY             = 0b00000001;
+        const ZERO              = 0b00000010;
+        const INTERRUPT_DISABLE = 0b00000100;
+        const DECIMAL_MODE      = 0b00001000;
+        const BREAK             = 0b00010000;
+        const BREAK2            = 0b00100000;
+        const OVERFLOW          = 0b01000000;
+        const NEGATIVE          = 0b10000000;
+    }
+}
 
 #[allow(clippy::upper_case_acronyms)]
 pub enum InterruptVector {
@@ -15,6 +29,7 @@ pub struct Cpu {
     a: u8,
     x: u8,
     y: u8,
+    status: CpuFlags,
     cycles: usize,
 }
 
@@ -36,14 +51,21 @@ impl Cpu {
         self.pc = (hi << 8) | lo;
     }
 
-    pub fn get_word(&mut self, bus: &Bus) -> u16 {
-        let hi = bus.read(self.pc);
-        let lo = bus.read(self.pc + 1);
-        u16::from_be_bytes([hi, lo])
+    fn get_word(&mut self, bus: &Bus) -> u16 {
+        let hi = bus.read(self.pc) as u16;
+        let lo = bus.read(self.pc + 1) as u16;
+        hi | (lo << 8)
+    }
+
+    fn get_byte(&mut self, bus: &mut Bus) -> u8 {
+        let val = bus.read(self.pc);
+        self.pc = self.pc.wrapping_add(1);
+        val
     }
 
     pub fn cycle(&mut self, bus: &mut Bus) {
         let op = bus.read(self.pc);
+        self.pc += 1;
 
         let opcode = OPCODE_MAP
             .get(&op)
@@ -51,20 +73,64 @@ impl Cpu {
 
         let cycle = match opcode.mode {
             Mode::Implied => self.do_implied(opcode, bus),
+            Mode::Immediate => self.do_immediate(opcode, bus),
+            Mode::Absolute => self.do_absolute(opcode, bus),
             _ => panic!("Unimplemented opcode: {:#X}", opcode.code),
         };
 
-        self.pc += 1;
+        println!("Opcode: {:#X}, ", opcode.code);
+
         self.cycles += cycle as usize;
     }
 
     fn do_implied(&mut self, opcode: &Opcode, bus: &mut Bus) -> u8 {
         match opcode.code {
-            // SEI
             0x78 => {
+                self.status.insert(CpuFlags::INTERRUPT_DISABLE);
                 2
             }
-            _ => panic!("Unimplemented")
+            0xD8 => {
+                self.status.remove(CpuFlags::DECIMAL_MODE);
+                2
+            }
+            _ => unimplemented!(),
+        }
+    }
+
+    fn do_immediate(&mut self, opcode: &Opcode, bus: &mut Bus) -> u8 {
+        match opcode.code {
+            0xA9 => {
+                self.a = self.get_byte(bus);
+                self.set_zn(self.a);
+                2
+            }
+            _ => unimplemented!(),
+        }
+    }
+
+    fn do_absolute(&mut self, opcode: &Opcode, bus: &mut Bus) -> u8 {
+        match opcode.code {
+            // STA
+            0x8D => {
+                let addr = self.get_word(bus);
+                bus.write(addr, self.a);
+                4
+            }
+            _ => unimplemented!()
+        }
+    }
+
+    fn set_zn(&mut self, value: u8) {
+        if value == 0 {
+            self.status.insert(CpuFlags::ZERO);
+        } else {
+            self.status.remove(CpuFlags::ZERO);
+        }
+
+        if value >> 7 == 1 {
+            self.status.insert(CpuFlags::NEGATIVE);
+        } else {
+            self.status.remove(CpuFlags::NEGATIVE);
         }
     }
 }
