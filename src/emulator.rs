@@ -41,7 +41,9 @@ impl Emulator {
     pub fn run(&mut self) {
         let bus = &mut self.bus;
 
-        self.cpu.cycle(bus);
-        self.ppu.cycle(bus);
+        'main: loop {
+            self.cpu.cycle(bus);
+            // self.ppu.cycle(bus);
+        }
     }
 }
