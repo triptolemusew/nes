@@ -1,5 +1,5 @@
-use super::components::ppu::Ppu;
 use super::components::mapper;
+use super::components::ppu::Ppu;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -40,20 +40,14 @@ impl Bus {
             0x2000..=0x4019 => {
                 // PPU registers
                 todo!()
-                // if addr < 0x4000 {
-                //     return 1;
-                // }
-                // return 2;
-            },
+            }
             0x4020..=0x5FFF => {
                 todo!()
             }
             0x6000..=0x7FFF => {
                 todo!()
             }
-            _ => {
-                mapper.borrow().read_prg(addr)
-            }
+            _ => mapper.borrow().read_prg(addr),
         }
     }
 
@@ -65,8 +59,13 @@ impl Bus {
                 todo!()
             }
             0x2000..=0x3FFF => {
-                // PPU -> writing to PPU registers
-                self.ppu.ctrl = value;
+                // PPU writing to PPU registers
+                match addr & 0x2007 {
+                    0x2000 => self.ppu.ctrl = value,
+                    0x2001 => self.ppu.mask = value,
+                    0x2002 => self.ppu.status = value,
+                    _ => {}
+                }
             }
             0x4000..=0x4013 => {
                 // APU
